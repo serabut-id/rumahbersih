@@ -114,12 +114,18 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
 .shake { animation:shake .3s ease; }
 @keyframes shake { 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
 .loader { text-align:center; padding:64px 0; opacity:.6; font-weight:600; }
-.install { background:var(--fg); color:#fff; border-radius:16px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; gap:12px; }
-.install .it { flex:1; font-size:13.5px; font-weight:500; line-height:1.4; }
-.install .it b { display:block; font-size:15px; }
-.install button { border:none; font:inherit; font-weight:700; border-radius:10px; padding:10px 14px; cursor:pointer; flex-shrink:0; }
-.install .go { background:var(--secondary, #22D3EE); color:var(--fg); }
-.install .x { background:rgba(255,255,255,.15); color:#fff; width:36px; padding:10px 0; }
+.fab { position:fixed; bottom:calc(86px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:8px; z-index:15; }
+.fab[hidden] { display:none; }
+.fab .fgo { display:flex; align-items:center; gap:8px; border:none; font:inherit; font-size:14.5px; font-weight:700; background:var(--fg); color:#fff; border-radius:99px; padding:13px 20px; cursor:pointer; box-shadow:0 8px 24px rgba(22,78,99,.35); }
+.fab .fgo:active { transform:scale(.96); }
+.fab .fx { border:none; background:var(--fg); color:#fff; opacity:.85; border-radius:99px; width:38px; height:38px; cursor:pointer; font-size:15px; box-shadow:0 8px 24px rgba(22,78,99,.35); }
+@keyframes fabin { from { opacity:0; transform:translate(-50%, 16px); } to { opacity:1; transform:translate(-50%, 0); } }
+.fab { animation:fabin .3s ease; }
+.login { text-align:center; padding-top:9vh; }
+.login .logo { width:88px; height:88px; border-radius:28px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+.login h2 { font-size:26px; margin:0 0 4px; }
+.login p { opacity:.65; font-weight:500; margin-bottom:32px; }
+.login .btn { width:100%; margin-bottom:12px; font-size:17px; padding:16px; }
 .steps { margin:0; padding-left:20px; font-size:14.5px; }
 .steps li { margin:8px 0; }
 .skel { background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:10px; position:relative; overflow:hidden; }
@@ -150,8 +156,8 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
 <body>
 <header>
   <div><h1>RumahBersih</h1><div class="sub" id="subtitle"></div></div>
-  <button class="iconbtn" id="modeBtn" aria-label="Buka pengaturan admin">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  <button class="iconbtn" id="modeBtn" aria-label="Ganti akun">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
   </button>
 </header>
 <main id="app">
@@ -161,6 +167,14 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
   <div class="skel" style="height:60px"></div>
   <div class="skel" style="height:60px"></div>
 </main>
+<div class="fab" id="installFab" hidden>
+  <button class="fgo" onclick="doInstall()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Pasang Aplikasi
+  </button>
+  <button class="fx" aria-label="Tutup" onclick="localStorage.installDismissed=1;updateFab()">✕</button>
+</div>
+
 <nav>
   <button id="tabHome" class="active" onclick="setTab('home')" aria-label="Beranda">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -379,12 +393,38 @@ function setTab(t) {
 
 function render() {
   db.report = calcReport();
+  document.querySelector('nav').style.display = localStorage.role ? 'flex' : 'none';
+  updateFab();
+  if (!localStorage.role) { renderLogin(); return; }
   const now = new Date();
   const who = localStorage.artName ? localStorage.artName + ' · ' : '';
   const house = db.houseNo ? ' · Rmh ' + db.houseNo : '';
   $('subtitle').textContent = (admin ? 'Mode Admin' : who + HARI[now.getDay()] + ', ' + now.getDate() + ' ' + BULAN[now.getMonth()]) + house;
   if (tab === 'report') { renderReport(); return; }
   admin ? renderAdmin() : renderART();
+}
+
+function renderLogin() {
+  $('subtitle').textContent = 'Selamat datang';
+  $('app').innerHTML = `<div class="login">
+    <div class="logo"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h2>RumahBersih</h2>
+    <p>Checklist harian asisten rumah tangga</p>
+    <button class="btn" onclick="loginART()">Masuk sebagai ART</button>
+    <button class="btn ghost" onclick="loginAdmin()">Masuk sebagai Admin</button>
+  </div>`;
+}
+
+function loginART() {
+  $('nameInput').value = localStorage.artName || '';
+  $('nameModal').classList.add('show');
+  setTimeout(() => $('nameInput').focus(), 100);
+}
+
+function loginAdmin() {
+  $('pinInput').value = '';
+  $('pinModal').classList.add('show');
+  setTimeout(() => $('pinInput').focus(), 100);
 }
 
 function renderReport() {
@@ -409,29 +449,27 @@ function saveName() {
   const v = $('nameInput').value.trim();
   if (!v) { $('nameInput').classList.add('shake'); return; }
   localStorage.artName = v;
+  localStorage.role = 'art';
+  admin = false;
   $('nameModal').classList.remove('show');
-  render();
+  setTab('home');
 }
 
 // Android Chrome: tombol Pasang asli via beforeinstallprompt; iOS: panduan Add to Home Screen
 let installEvt = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (db && !admin) render(); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; updateFab(); });
 
-function installBanner() {
-  if (localStorage.installDismissed || matchMedia('(display-mode: standalone)').matches || navigator.standalone) return '';
+function updateFab() {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const inGas = typeof google !== 'undefined' && google.script;
-  return `<div class="install">
-    <div class="it"><b>Pasang Aplikasi</b>Biar muncul di layar utama HP.</div>
-    <button class="go" onclick="doInstall()">${installEvt ? 'Pasang' : 'Cara Pasang'}</button>
-    <button class="x" aria-label="Tutup" onclick="localStorage.installDismissed=1;render()">✕</button>
-  </div>`;
+  $('installFab').hidden = !!(localStorage.installDismissed || standalone || inGas || !localStorage.role);
 }
 
 async function doInstall() {
   if (installEvt) {
     installEvt.prompt();
     const res = await installEvt.userChoice;
-    if (res.outcome === 'accepted') { localStorage.installDismissed = 1; render(); }
+    if (res.outcome === 'accepted') { localStorage.installDismissed = 1; updateFab(); }
     installEvt = null;
     return;
   }
@@ -461,7 +499,7 @@ function renderART() {
   const sudah = due.filter(t => doneIds.includes(t.id));
   const thisMonth = db.report.find(r => r.month === todayKey().slice(0,7));
   const est = thisMonth ? thisMonth.salary : 0;
-  let html = installBanner() + `<div class="card salary">
+  let html = `<div class="card salary">
     <div class="slabel">Estimasi Gaji Bulan Ini</div>
     <div class="amount">${rupiah(est)}</div>
     <div class="sgrid">
@@ -614,7 +652,7 @@ function closeDel() { $('delModal').classList.remove('show'); }
 function closePin() { $('pinModal').classList.remove('show'); }
 function submitPin() {
   const inp = $('pinInput');
-  if (inp.value === db.pin) { closePin(); admin = true; setTab('home'); }
+  if (inp.value === db.pin) { closePin(); admin = true; localStorage.role = 'admin'; setTab('home'); }
   else { inp.value = ''; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); toast('PIN salah'); }
 }
 
@@ -634,18 +672,21 @@ async function saveWage(e) {
   catch (err) { btn.classList.remove('loading'); toast('Gagal, coba lagi'); }
 }
 
+// tombol header = ganti akun (logout ke layar login)
 $('modeBtn').onclick = () => {
-  if (admin) { admin = false; setTab('home'); return; }
-  $('pinInput').value = '';
-  $('pinModal').classList.add('show');
-  setTimeout(() => $('pinInput').focus(), 100);
+  if (!localStorage.role) return;
+  localStorage.removeItem('role');
+  admin = false; editId = null; tab = 'home';
+  $('tabHome').classList.add('active'); $('tabReport').classList.remove('active');
+  render();
 };
 $('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); });
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); }));
 
 call('getState').then(d => {
-  db = d; setTab('home');
-  if (!localStorage.artName) { $('nameModal').classList.add('show'); setTimeout(() => $('nameInput').focus(), 100); }
+  db = d;
+  admin = localStorage.role === 'admin';
+  setTab('home');
 })
   .catch(() => { $('app').innerHTML = '<div class="empty">Gagal memuat data. Muat ulang halaman.</div>'; });
 

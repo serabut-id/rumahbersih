@@ -114,13 +114,16 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
 .shake { animation:shake .3s ease; }
 @keyframes shake { 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
 .loader { text-align:center; padding:64px 0; opacity:.6; font-weight:600; }
-.fab { position:fixed; bottom:calc(86px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:8px; z-index:15; }
+.fab { position:fixed; bottom:calc(78px + env(safe-area-inset-bottom)); left:12px; right:12px; max-width:536px; margin:0 auto; background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:0 10px 30px rgba(22,78,99,.18); display:flex; align-items:center; gap:12px; padding:12px 14px; z-index:15; animation:fabin .3s ease; }
 .fab[hidden] { display:none; }
-.fab .fgo { display:flex; align-items:center; gap:8px; border:none; font:inherit; font-size:14.5px; font-weight:700; background:var(--fg); color:#fff; border-radius:99px; padding:13px 20px; cursor:pointer; box-shadow:0 8px 24px rgba(22,78,99,.35); }
+.fab .ficon { width:44px; height:44px; border-radius:12px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.fab .ftext { flex:1; min-width:0; line-height:1.3; }
+.fab .ftext b { font-size:14.5px; display:block; }
+.fab .ftext span { font-size:12.5px; opacity:.6; font-weight:500; }
+.fab .fgo { border:none; font:inherit; font-size:14px; font-weight:700; background:var(--primary); color:#fff; border-radius:99px; padding:10px 18px; cursor:pointer; flex-shrink:0; }
 .fab .fgo:active { transform:scale(.96); }
-.fab .fx { border:none; background:var(--fg); color:#fff; opacity:.85; border-radius:99px; width:38px; height:38px; cursor:pointer; font-size:15px; box-shadow:0 8px 24px rgba(22,78,99,.35); }
-@keyframes fabin { from { opacity:0; transform:translate(-50%, 16px); } to { opacity:1; transform:translate(-50%, 0); } }
-.fab { animation:fabin .3s ease; }
+.fab .fx { border:none; background:none; color:var(--fg); opacity:.45; width:32px; height:32px; cursor:pointer; font-size:15px; flex-shrink:0; border-radius:99px; }
+@keyframes fabin { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 .login { text-align:center; padding-top:9vh; }
 .login .logo { width:88px; height:88px; border-radius:28px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
 .login h2 { font-size:26px; margin:0 0 4px; }
@@ -168,10 +171,9 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
   <div class="skel" style="height:60px"></div>
 </main>
 <div class="fab" id="installFab" hidden>
-  <button class="fgo" onclick="doInstall()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    Pasang Aplikasi
-  </button>
+  <div class="ficon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <div class="ftext"><b>RumahBersih</b><span>Pasang di layar utama HP</span></div>
+  <button class="fgo" onclick="doInstall()">Pasang</button>
   <button class="fx" aria-label="Tutup" onclick="localStorage.installDismissed=1;updateFab()">✕</button>
 </div>
 
@@ -186,29 +188,6 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
   </button>
 </nav>
 <div class="toast" id="toast"></div>
-
-<div class="overlay" id="pinModal">
-  <div class="sheet">
-    <h3>Masuk Admin</h3>
-    <p>Masukkan PIN untuk mengelola tugas dan gaji.</p>
-    <input class="pin" id="pinInput" type="password" inputmode="numeric" maxlength="8" autocomplete="off" aria-label="PIN Admin">
-    <div class="actions">
-      <button class="btn ghost" onclick="closePin()">Batal</button>
-      <button class="btn" onclick="submitPin()">Masuk</button>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="nameModal">
-  <div class="sheet">
-    <h3>Siapa nama kamu?</h3>
-    <p>Nama akan dicatat di setiap tugas yang kamu selesaikan.</p>
-    <input id="nameInput" maxlength="30" autocomplete="name" placeholder="cth: Sari" aria-label="Nama ART">
-    <div class="actions">
-      <button class="btn" onclick="saveName()">Simpan</button>
-    </div>
-  </div>
-</div>
 
 <div class="overlay" id="installModal">
   <div class="sheet">
@@ -410,21 +389,30 @@ function renderLogin() {
     <div class="logo"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
     <h2>RumahBersih</h2>
     <p>Checklist harian asisten rumah tangga</p>
-    <button class="btn" onclick="loginART()">Masuk sebagai ART</button>
-    <button class="btn ghost" onclick="loginAdmin()">Masuk sebagai Admin</button>
+    <form onsubmit="doLogin(event)" style="text-align:left">
+      <label>Nama <input id="lName" required maxlength="30" autocomplete="username" placeholder="cth: Hayati" value="${(localStorage.artName || '').replace(/"/g,'&quot;')}"></label>
+      <label>PIN <input id="lPin" required type="password" inputmode="numeric" maxlength="8" autocomplete="current-password" placeholder="cth: 1234"></label>
+      <button class="btn" type="submit">Masuk</button>
+    </form>
   </div>`;
 }
 
-function loginART() {
-  $('nameInput').value = localStorage.artName || '';
-  $('nameModal').classList.add('show');
-  setTimeout(() => $('nameInput').focus(), 100);
-}
-
-function loginAdmin() {
-  $('pinInput').value = '';
-  $('pinModal').classList.add('show');
-  setTimeout(() => $('pinInput').focus(), 100);
+// role otomatis dari tab Users di Sheet: art masuk sisi ART, admin masuk sisi Admin
+function doLogin(e) {
+  e.preventDefault();
+  const name = $('lName').value.trim(), pin = $('lPin').value.trim();
+  const u = db.users.find(u => u.name.toLowerCase() === name.toLowerCase() && u.pin === pin);
+  if (!u) {
+    $('lPin').value = '';
+    $('lPin').classList.remove('shake'); void $('lPin').offsetWidth; $('lPin').classList.add('shake');
+    toast('Nama atau PIN salah');
+    return;
+  }
+  localStorage.artName = u.name;
+  localStorage.role = u.role;
+  admin = u.role === 'admin';
+  setTab('home');
+  toast('Halo, ' + u.name);
 }
 
 function renderReport() {
@@ -445,15 +433,6 @@ function renderReport() {
     <h2>Laporan Bulanan</h2>${reportTable()}`;
 }
 
-function saveName() {
-  const v = $('nameInput').value.trim();
-  if (!v) { $('nameInput').classList.add('shake'); return; }
-  localStorage.artName = v;
-  localStorage.role = 'art';
-  admin = false;
-  $('nameModal').classList.remove('show');
-  setTab('home');
-}
 
 // Android Chrome: tombol Pasang asli via beforeinstallprompt; iOS: panduan Add to Home Screen
 let installEvt = null;
@@ -585,13 +564,66 @@ function renderAdmin() {
       <button aria-label="Turunkan urutan" ${i === db.tasks.length - 1 ? 'disabled' : ''} onclick="move('${t.id}',1)">${DOWN}</button>
       <button class="edit" aria-label="Ubah ${t.name}" onclick="startEdit('${t.id}')">${PENCIL}</button>
       <button class="del" aria-label="Hapus ${t.name}" onclick="delTask(this,'${t.id}')">${TRASH}</button></div>`).join('') || '<div class="empty">Belum ada tugas.</div>'}
+    <h2>Pengguna (${db.users.length})</h2>
+    <form onsubmit="saveUser(event)">
+      <div class="row2">
+        <label>Nama <input id="uName" required maxlength="30" placeholder="cth: Hayati"></label>
+        <label>PIN <input id="uPin" required inputmode="numeric" maxlength="8" placeholder="cth: 2345"></label>
+      </div>
+      <label>Peran
+        <select id="uRole"><option value="art">ART</option><option value="admin">Admin</option></select></label>
+      <div class="row2">
+        ${editUserId ? '<button class="btn ghost" type="button" onclick="editUserId=null;render()">Batal</button>' : ''}
+        <button class="btn" type="submit">${editUserId ? 'Simpan Perubahan' : 'Tambah Pengguna'}</button>
+      </div>
+    </form>
+    ${db.users.map(u => {
+      const lastAdmin = u.role === 'admin' && db.users.filter(x => x.role === 'admin').length === 1;
+      return `<div class="arow ${u.id === editUserId ? 'editing' : ''}">
+      <div class="name">${u.name}<div class="meta">${u.role === 'admin' ? 'Admin' : 'ART'} · PIN ${u.pin}</div></div>
+      <button class="edit" aria-label="Ubah ${u.name}" onclick="startEditUser('${u.id}')">${PENCIL}</button>
+      <button class="del" aria-label="Hapus ${u.name}" ${lastAdmin ? 'disabled' : ''} onclick="delUser(this,'${u.id}')">${TRASH}</button></div>`;
+    }).join('')}
     <button class="btn ghost" style="width:100%;margin-top:16px" onclick="editId=null;admin=false;setTab('home')">Kembali ke Mode ART</button>`;
   if (editing) {
     $('fFreq').value = editing.freq;
     syncDay();
     if (['mingguan','bulanan'].includes(editing.freq)) $('fDay').value = editing.day;
   }
+  const eu = db.users.find(u => u.id === editUserId);
+  if (eu) { $('uName').value = eu.name; $('uPin').value = eu.pin; $('uRole').value = eu.role; }
   payPreview();
+}
+
+let editUserId = null;
+
+function startEditUser(id) {
+  editUserId = id;
+  render();
+  $('uName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function saveUser(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]'); btn.classList.add('loading');
+  const args = [$('uName').value.trim(), $('uPin').value.trim(), $('uRole').value];
+  try {
+    db = editUserId ? await call('updateUser', editUserId, ...args) : await call('addUser', ...args);
+    toast(editUserId ? 'Pengguna diperbarui' : 'Pengguna ditambahkan');
+    editUserId = null; render();
+  } catch (err) { btn.classList.remove('loading'); toast('Gagal, coba lagi'); }
+}
+
+function delUser(el, id) {
+  const u = db.users.find(u => u.id === id);
+  $('delName').textContent = '"' + (u ? u.name : '') + '" tidak akan bisa login lagi.';
+  $('delModal').classList.add('show');
+  $('delConfirm').onclick = async () => {
+    closeDel();
+    el.disabled = true;
+    try { db = await call('delUser', id); render(); toast('Pengguna dihapus'); }
+    catch (e) { el.disabled = false; toast('Gagal, coba lagi'); }
+  };
 }
 
 function startEdit(id) {
@@ -649,12 +681,6 @@ function delTask(el, id) {
 }
 function closeDel() { $('delModal').classList.remove('show'); }
 
-function closePin() { $('pinModal').classList.remove('show'); }
-function submitPin() {
-  const inp = $('pinInput');
-  if (inp.value === db.pin) { closePin(); admin = true; localStorage.role = 'admin'; setTab('home'); }
-  else { inp.value = ''; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); toast('PIN salah'); }
-}
 
 function payPreview() {
   const wage = +$('fWage').value || 0, start = $('fStart').value;
@@ -680,7 +706,6 @@ $('modeBtn').onclick = () => {
   $('tabHome').classList.add('active'); $('tabReport').classList.remove('active');
   render();
 };
-$('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); });
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); }));
 
 call('getState').then(d => {

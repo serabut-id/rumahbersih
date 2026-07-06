@@ -23,9 +23,20 @@ header h1 { font-size:20px; font-weight:700; }
 header .sub { font-size:13px; opacity:.85; font-weight:500; }
 main { padding:16px 16px calc(84px + env(safe-area-inset-bottom)); max-width:560px; margin:0 auto; }
 nav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border); display:flex; z-index:20; padding-bottom:env(safe-area-inset-bottom); }
-nav button { flex:1; border:none; background:none; font:inherit; font-size:12px; font-weight:600; color:var(--fg); opacity:.5; padding:10px 0 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; transition:opacity .15s ease; }
+nav button { flex:1; border:none; background:none; font:inherit; font-size:12px; font-weight:600; color:var(--fg); opacity:.5; padding:8px 0; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; transition:opacity .15s ease; }
+nav button svg { padding:3px 18px; border-radius:99px; transition:background .2s ease; box-sizing:content-box; }
 nav button.active { opacity:1; color:var(--primary); }
+nav button.active svg { background:var(--bg); }
 nav button:active { transform:scale(.95); }
+@keyframes pagein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+main.pagein { animation:pagein .22s ease; }
+@keyframes rowin { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+main.pagein .card, main.pagein .task, main.pagein .stats, main.pagein .arow, main.pagein .dayrow { animation:rowin .3s ease both; }
+main.pagein > :nth-child(2) { animation-delay:.03s; }
+main.pagein > :nth-child(3) { animation-delay:.06s; }
+main.pagein > :nth-child(4) { animation-delay:.09s; }
+main.pagein > :nth-child(5) { animation-delay:.12s; }
+main.pagein > :nth-child(6) { animation-delay:.15s; }
 .iconbtn { background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:12px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s ease; }
 .iconbtn:active { background:rgba(255,255,255,.3); }
 .card { background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px; }
@@ -361,13 +372,17 @@ function setTab(t) {
   $('tabReport').classList.toggle('active', t === 'report');
   render();
   window.scrollTo(0, 0);
+  // re-trigger transisi halaman ala native
+  const m = document.querySelector('main');
+  m.classList.remove('pagein'); void m.offsetWidth; m.classList.add('pagein');
 }
 
 function render() {
   db.report = calcReport();
   const now = new Date();
   const who = localStorage.artName ? localStorage.artName + ' · ' : '';
-  $('subtitle').textContent = admin ? 'Mode Admin' : who + HARI[now.getDay()] + ', ' + now.getDate() + ' ' + BULAN[now.getMonth()];
+  const house = db.houseNo ? ' · Rmh ' + db.houseNo : '';
+  $('subtitle').textContent = (admin ? 'Mode Admin' : who + HARI[now.getDay()] + ', ' + now.getDate() + ' ' + BULAN[now.getMonth()]) + house;
   if (tab === 'report') { renderReport(); return; }
   admin ? renderAdmin() : renderART();
 }
@@ -501,6 +516,8 @@ function renderAdmin() {
         <label>Tgl mulai kerja
           <input id="fStart" type="date" value="${db.startDate || ''}" max="${todayKey()}" oninput="payPreview()"></label>
       </div>
+      <label>No. Rumah
+        <input id="fHouse" maxlength="20" placeholder="cth: B-12" value="${(db.houseNo || '').replace(/"/g,'&quot;')}"></label>
       <div class="note" id="payPreview" style="font-size:13.5px;font-weight:500;opacity:.75"></div>
       <button class="btn" type="submit">Simpan Gaji</button>
     </form>
@@ -530,7 +547,7 @@ function renderAdmin() {
       <button aria-label="Turunkan urutan" ${i === db.tasks.length - 1 ? 'disabled' : ''} onclick="move('${t.id}',1)">${DOWN}</button>
       <button class="edit" aria-label="Ubah ${t.name}" onclick="startEdit('${t.id}')">${PENCIL}</button>
       <button class="del" aria-label="Hapus ${t.name}" onclick="delTask(this,'${t.id}')">${TRASH}</button></div>`).join('') || '<div class="empty">Belum ada tugas.</div>'}
-    <button class="btn ghost" style="width:100%;margin-top:16px" onclick="editId=null;admin=false;render()">Kembali ke Mode ART</button>`;
+    <button class="btn ghost" style="width:100%;margin-top:16px" onclick="editId=null;admin=false;setTab('home')">Kembali ke Mode ART</button>`;
   if (editing) {
     $('fFreq').value = editing.freq;
     syncDay();
@@ -597,7 +614,7 @@ function closeDel() { $('delModal').classList.remove('show'); }
 function closePin() { $('pinModal').classList.remove('show'); }
 function submitPin() {
   const inp = $('pinInput');
-  if (inp.value === db.pin) { closePin(); admin = true; render(); }
+  if (inp.value === db.pin) { closePin(); admin = true; setTab('home'); }
   else { inp.value = ''; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); toast('PIN salah'); }
 }
 
@@ -613,12 +630,12 @@ function payPreview() {
 async function saveWage(e) {
   e.preventDefault();
   const btn = e.target.querySelector('.btn'); btn.classList.add('loading');
-  try { db = await call('setPay', +$('fWage').value, $('fStart').value); render(); toast('Gaji disimpan'); }
+  try { db = await call('setPay', +$('fWage').value, $('fStart').value, $('fHouse').value.trim()); render(); toast('Disimpan'); }
   catch (err) { btn.classList.remove('loading'); toast('Gagal, coba lagi'); }
 }
 
 $('modeBtn').onclick = () => {
-  if (admin) { admin = false; render(); return; }
+  if (admin) { admin = false; setTab('home'); return; }
   $('pinInput').value = '';
   $('pinModal').classList.add('show');
   setTimeout(() => $('pinInput').focus(), 100);
@@ -627,7 +644,7 @@ $('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitPi
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); }));
 
 call('getState').then(d => {
-  db = d; render();
+  db = d; setTab('home');
   if (!localStorage.artName) { $('nameModal').classList.add('show'); setTimeout(() => $('nameInput').focus(), 100); }
 })
   .catch(() => { $('app').innerHTML = '<div class="empty">Gagal memuat data. Muat ulang halaman.</div>'; });

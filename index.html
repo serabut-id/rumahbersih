@@ -134,9 +134,16 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
 .skel { background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:10px; position:relative; overflow:hidden; }
 .skel::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(165,243,252,.35), transparent); animation:shimmer 1.2s infinite; }
 @keyframes shimmer { from { transform:translateX(-100%); } to { transform:translateX(100%); } }
-.dayrow { background:#fff; border:1px solid var(--border); border-radius:16px; padding:12px 16px; margin-bottom:10px; }
-.dayrow .dhead { display:flex; justify-content:space-between; font-weight:700; font-size:14px; margin-bottom:6px; }
-.dayrow .dhead .pct { color:var(--primary); }
+.dayrow { background:#fff; border:1px solid var(--border); border-radius:16px; padding:0 16px; margin-bottom:8px; }
+.dayrow summary { display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:14px; padding:13px 0; cursor:pointer; list-style:none; min-height:48px; }
+.dayrow summary::-webkit-details-marker { display:none; }
+.dayrow[open] summary { border-bottom:1px solid var(--muted); margin-bottom:8px; }
+.dayrow ul, .dayrow .none { padding-bottom:12px; }
+.dtag { font-size:12.5px; font-weight:700; border-radius:99px; padding:4px 12px; background:var(--muted); color:var(--fg); font-variant-numeric:tabular-nums; }
+.dtag.ok { background:#D1FAE5; color:#065F46; }
+.dtag.part { background:#FEF3C7; color:#92400E; }
+.dtag.bad { background:#FEE2E2; color:#991B1B; }
+.dtag.off { background:var(--bg); color:var(--primary); }
 .dayrow ul { margin:0; padding-left:18px; font-size:13.5px; }
 .dayrow li { margin:2px 0; }
 .dayrow li .who { opacity:.55; }
@@ -328,26 +335,41 @@ function chartMonth() {
   return `<div class="card"><div class="label"><span>Estimasi Gaji per Bulan</span></div>${rows}</div>`;
 }
 
+let repMonth = null;
+
 function dailyDetail() {
+  const today = todayKey();
+  const months = db.report.map(r => r.month);
+  if (!months.length) return '<div class="empty">Belum ada data.</div>';
+  if (!repMonth || !months.includes(repMonth)) repMonth = months[0];
+  const sel = `<select id="repMonth" onchange="repMonth=this.value;render()" style="margin-bottom:12px">
+    ${months.map(m => `<option value="${m}" ${m === repMonth ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>`;
+
+  const [y, mo] = [+repMonth.slice(0, 4), +repMonth.slice(5, 7) - 1];
+  const lastDay = repMonth === today.slice(0, 7) ? +today.slice(8) : new Date(y, mo + 1, 0).getDate();
   const days = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  for (let d = lastDay; d >= 1; d--) {
+    const key = repMonth + '-' + String(d).padStart(2, '0');
+    if (db.startDate && key < db.startDate) break;
+    const date = new Date(y, mo, d);
+    const minggu = date.getDay() === 0;
     const due = db.tasks.filter(t => dueOn(t, key));
-    if (!due.length && i > 0) continue;
     const doneRows = db.done.filter(x => x.date === key);
     const doneIds = doneRows.map(x => x.taskId);
     const selesai = due.filter(t => doneIds.includes(t.id));
     const belum = due.filter(t => !doneIds.includes(t.id));
-    const label = i === 0 ? 'Hari ini' : (i === 1 ? 'Kemarin' : HARI[d.getDay()]) ;
-    days.push(`<div class="dayrow">
-      <div class="dhead"><span>${label} · ${d.getDate()} ${BULAN[d.getMonth()]}</span><span class="pct">${selesai.length}/${due.length}</span></div>
+    const badge = minggu ? '<span class="dtag off">Libur</span>'
+      : !due.length ? '<span class="dtag">–</span>'
+      : `<span class="dtag ${belum.length === 0 ? 'ok' : (selesai.length ? 'part' : 'bad')}">${selesai.length}/${due.length}</span>`;
+    const label = (key === today ? 'Hari ini · ' : '') + HARI[date.getDay()] + ', ' + d + ' ' + BULAN[mo];
+    days.push(`<details class="dayrow">
+      <summary><span>${label}</span>${badge}</summary>
       ${selesai.length ? '<ul>' + selesai.map(t => { const w = doneRows.find(x => x.taskId === t.id); return `<li>${t.name}${w && w.who ? ` <span class="who">— ${w.who}</span>` : ''}</li>`; }).join('') + '</ul>' : ''}
-      ${belum.length ? '<ul>' + belum.map(t => `<li class="miss">${t.name} (belum)</li>`).join('') + '</ul>' : ''}
-      ${!due.length ? '<div class="none">Tidak ada tugas terjadwal.</div>' : ''}
-    </div>`);
+      ${belum.length && !minggu ? '<ul>' + belum.map(t => `<li class="miss">${t.name} (belum)</li>`).join('') + '</ul>' : ''}
+      ${!due.length || (minggu && !selesai.length) ? '<div class="none">' + (minggu ? 'Hari libur.' : 'Tidak ada tugas terjadwal.') + '</div>' : ''}
+    </details>`);
   }
-  return days.join('') || '<div class="empty">Belum ada data.</div>';
+  return sel + days.join('');
 }
 
 function reportTable() {
@@ -429,7 +451,7 @@ function renderReport() {
     </div>
     ${chartWeek()}
     ${chartMonth()}
-    <h2>Detail 7 Hari Terakhir</h2>${dailyDetail()}
+    <h2>Laporan Harian</h2>${dailyDetail()}
     <h2>Laporan Bulanan</h2>${reportTable()}`;
 }
 

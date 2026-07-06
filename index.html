@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0891B2">
+<title>RumahBersih</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+:root {
+  --primary:#0891B2; --accent:#059669; --bg:#ECFEFF;
+  --fg:#164E63; --muted:#E8F1F6; --border:#A5F3FC; --danger:#DC2626;
+}
+* { box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent; }
+body { font-family:'Plus Jakarta Sans',system-ui,sans-serif; background:var(--bg); color:var(--fg); min-height:100vh; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; overscroll-behavior-y:contain; }
+main, header { user-select:none; -webkit-user-select:none; }
+input, select { user-select:text; -webkit-user-select:text; }
+header { background:var(--primary); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+header h1 { font-size:20px; font-weight:700; }
+header .sub { font-size:13px; opacity:.85; font-weight:500; }
+main { padding:16px 16px calc(84px + env(safe-area-inset-bottom)); max-width:560px; margin:0 auto; }
+nav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border); display:flex; z-index:20; padding-bottom:env(safe-area-inset-bottom); }
+nav button { flex:1; border:none; background:none; font:inherit; font-size:12px; font-weight:600; color:var(--fg); opacity:.5; padding:10px 0 8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; transition:opacity .15s ease; }
+nav button.active { opacity:1; color:var(--primary); }
+nav button:active { transform:scale(.95); }
+.iconbtn { background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:12px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s ease; }
+.iconbtn:active { background:rgba(255,255,255,.3); }
+.card { background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:16px; }
+.card .label { display:flex; justify-content:space-between; font-size:14px; font-weight:600; margin-bottom:8px; }
+.sticky { position:sticky; top:84px; z-index:5; box-shadow:0 4px 12px rgba(8,145,178,.12); }
+.bar { background:var(--muted); border-radius:99px; height:10px; overflow:hidden; }
+.bar > div { background:var(--accent); height:100%; border-radius:99px; transition:width .3s ease; }
+.salary { text-align:center; padding:20px 16px 12px; }
+.salary .slabel { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.55; margin-bottom:4px; }
+.salary .amount { font-size:32px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; }
+.sgrid { display:flex; margin-top:14px; border-top:1px solid var(--muted); padding-top:12px; }
+.sgrid > div { flex:1; display:flex; flex-direction:column; gap:1px; }
+.sgrid > div + div { border-left:1px solid var(--muted); }
+.sgrid b { font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
+.sgrid span { font-size:11.5px; font-weight:600; opacity:.55; }
+.task { background:#fff; border:1px solid var(--border); border-radius:16px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:14px; cursor:pointer; min-height:60px; transition:transform .1s ease; }
+.task:active { transform:scale(.97); }
+.task.done .check { animation:pop .25s ease; }
+@keyframes pop { 50% { transform:scale(1.25); } }
+.task .check { width:28px; height:28px; border-radius:99px; border:2px solid var(--primary); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s ease; }
+.task.done .check { background:var(--accent); border-color:var(--accent); }
+.task .check svg { opacity:0; stroke:#fff; }
+.task.done .check svg { opacity:1; }
+.task .name { font-weight:600; flex:1; }
+.task .desc { font-size:13px; font-weight:400; opacity:.65; margin-top:2px; }
+.task.done .name { text-decoration:line-through; opacity:.5; }
+.stats { display:flex; gap:10px; margin-bottom:16px; }
+.stat { flex:1; background:#fff; border:1px solid var(--border); border-radius:16px; padding:12px; text-align:center; }
+.stat .n { font-size:24px; font-weight:700; }
+.stat.ok .n { color:var(--accent); }
+.stat .t { font-size:12px; font-weight:600; opacity:.65; }
+.task .freq { font-size:12px; font-weight:500; color:var(--primary); background:var(--bg); border-radius:99px; padding:3px 10px; flex-shrink:0; }
+.empty { text-align:center; padding:48px 16px; opacity:.6; font-weight:500; }
+h2 { font-size:16px; font-weight:700; margin:20px 0 10px; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th, td { text-align:left; padding:8px 4px; border-bottom:1px solid var(--muted); }
+th { font-size:12px; text-transform:uppercase; letter-spacing:.03em; opacity:.7; }
+td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+.arow { background:#fff; border:1px solid var(--border); border-radius:16px; padding:12px 16px; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+.arow .name { font-weight:600; flex:1; min-width:0; }
+.arow .meta { font-size:13px; color:var(--primary); font-weight:500; }
+.arow button { border:none; background:var(--muted); color:var(--fg); border-radius:10px; width:36px; height:44px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0; }
+.arow button.del { color:var(--danger); }
+.arow button.edit { color:var(--primary); }
+.arow button:disabled { opacity:.35; }
+.arow.editing { outline:2px solid var(--primary); }
+form { background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+label { font-size:14px; font-weight:600; display:flex; flex-direction:column; gap:6px; }
+/* 16px minimum: input font <16px memicu auto-zoom di iOS */
+input, select { font:inherit; font-size:16px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--bg); color:var(--fg); width:100%; min-height:48px; }
+input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px; }
+.btn { font:inherit; font-weight:700; background:var(--primary); color:#fff; border:none; border-radius:12px; padding:14px; cursor:pointer; min-height:48px; transition:opacity .15s ease; }
+.btn:active { transform:scale(.98); opacity:.85; }
+.btn:disabled { opacity:.7; }
+.iconbtn:active { transform:scale(.92); }
+.btn.loading { color:transparent; position:relative; pointer-events:none; }
+.btn.loading::after { content:''; position:absolute; inset:0; margin:auto; width:20px; height:20px; border:3px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:99px; animation:spin .7s linear infinite; }
+.btn.ghost.loading::after { border-color:rgba(22,78,99,.25); border-top-color:var(--fg); }
+@keyframes spin { to { transform:rotate(360deg); } }
+.btn.ghost { background:var(--muted); color:var(--fg); }
+.row2 { display:flex; gap:10px; }
+.row2 > * { flex:1; }
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--fg); color:#fff; padding:10px 20px; border-radius:99px; font-size:14px; font-weight:600; opacity:0; transition:opacity .2s ease; pointer-events:none; z-index:50; }
+.toast.show { opacity:1; }
+.overlay { position:fixed; inset:0; background:rgba(22,78,99,.5); display:none; align-items:flex-end; justify-content:center; z-index:40; }
+.overlay.show { display:flex; }
+.sheet { background:#fff; border-radius:24px 24px 0 0; padding:24px 20px calc(24px + env(safe-area-inset-bottom)); width:100%; max-width:560px; animation:up .25s ease; }
+@keyframes up { from { transform:translateY(40px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.sheet h3 { font-size:18px; font-weight:700; margin-bottom:4px; }
+.sheet p { font-size:14px; opacity:.7; margin-bottom:16px; }
+.sheet .pin { text-align:center; font-size:24px; letter-spacing:.4em; font-weight:700; }
+.sheet .actions { display:flex; gap:10px; margin-top:16px; }
+.sheet .actions .btn { flex:1; }
+.btn.danger { background:var(--danger); }
+.shake { animation:shake .3s ease; }
+@keyframes shake { 25% { transform:translateX(-6px); } 75% { transform:translateX(6px); } }
+.loader { text-align:center; padding:64px 0; opacity:.6; font-weight:600; }
+.install { background:var(--fg); color:#fff; border-radius:16px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; gap:12px; }
+.install .it { flex:1; font-size:13.5px; font-weight:500; line-height:1.4; }
+.install .it b { display:block; font-size:15px; }
+.install button { border:none; font:inherit; font-weight:700; border-radius:10px; padding:10px 14px; cursor:pointer; flex-shrink:0; }
+.install .go { background:var(--secondary, #22D3EE); color:var(--fg); }
+.install .x { background:rgba(255,255,255,.15); color:#fff; width:36px; padding:10px 0; }
+.steps { margin:0; padding-left:20px; font-size:14.5px; }
+.steps li { margin:8px 0; }
+.skel { background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:10px; position:relative; overflow:hidden; }
+.skel::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(165,243,252,.35), transparent); animation:shimmer 1.2s infinite; }
+@keyframes shimmer { from { transform:translateX(-100%); } to { transform:translateX(100%); } }
+.dayrow { background:#fff; border:1px solid var(--border); border-radius:16px; padding:12px 16px; margin-bottom:10px; }
+.dayrow .dhead { display:flex; justify-content:space-between; font-weight:700; font-size:14px; margin-bottom:6px; }
+.dayrow .dhead .pct { color:var(--primary); }
+.dayrow ul { margin:0; padding-left:18px; font-size:13.5px; }
+.dayrow li { margin:2px 0; }
+.dayrow li .who { opacity:.55; }
+.dayrow li.miss { color:var(--danger); }
+.dayrow .none { font-size:13.5px; opacity:.6; }
+.chart { display:flex; gap:8px; align-items:flex-end; height:130px; padding-top:8px; }
+.cbar { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; }
+.cbar .fill { width:100%; max-width:34px; background:var(--accent); border-radius:8px 8px 4px 4px; min-height:4px; transition:height .4s ease; }
+.cbar.today .fill { background:var(--primary); }
+.cbar .v { font-size:11px; font-weight:700; }
+.cbar .l { font-size:11px; font-weight:600; opacity:.6; }
+.hrow { display:flex; align-items:center; gap:10px; margin:10px 0; }
+.hrow .hl { width:64px; font-size:13px; font-weight:600; flex-shrink:0; }
+.hrow .htrack { flex:1; background:var(--muted); border-radius:99px; height:22px; overflow:hidden; }
+.hrow .hfill { background:var(--primary); height:100%; border-radius:99px; min-width:4px; transition:width .4s ease; }
+.hrow .hv { font-size:12.5px; font-weight:700; width:88px; text-align:right; flex-shrink:0; font-variant-numeric:tabular-nums; }
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>RumahBersih</h1><div class="sub" id="subtitle"></div></div>
+  <button class="iconbtn" id="modeBtn" aria-label="Buka pengaturan admin">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</header>
+<main id="app">
+  <div class="skel" style="height:90px"></div>
+  <div class="skel" style="height:64px"></div>
+  <div class="skel" style="height:60px"></div>
+  <div class="skel" style="height:60px"></div>
+  <div class="skel" style="height:60px"></div>
+</main>
+<nav>
+  <button id="tabHome" class="active" onclick="setTab('home')" aria-label="Beranda">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Beranda
+  </button>
+  <button id="tabReport" onclick="setTab('report')" aria-label="Laporan">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Laporan
+  </button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="pinModal">
+  <div class="sheet">
+    <h3>Masuk Admin</h3>
+    <p>Masukkan PIN untuk mengelola tugas dan gaji.</p>
+    <input class="pin" id="pinInput" type="password" inputmode="numeric" maxlength="8" autocomplete="off" aria-label="PIN Admin">
+    <div class="actions">
+      <button class="btn ghost" onclick="closePin()">Batal</button>
+      <button class="btn" onclick="submitPin()">Masuk</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="nameModal">
+  <div class="sheet">
+    <h3>Siapa nama kamu?</h3>
+    <p>Nama akan dicatat di setiap tugas yang kamu selesaikan.</p>
+    <input id="nameInput" maxlength="30" autocomplete="name" placeholder="cth: Sari" aria-label="Nama ART">
+    <div class="actions">
+      <button class="btn" onclick="saveName()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="installModal">
+  <div class="sheet">
+    <h3>Pasang di Layar Utama</h3>
+    <p id="installSub">Supaya gampang dibuka seperti aplikasi biasa.</p>
+    <ol class="steps" id="installSteps"></ol>
+    <div class="actions">
+      <button class="btn" onclick="$('installModal').classList.remove('show')">Mengerti</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="delModal">
+  <div class="sheet">
+    <h3>Hapus tugas?</h3>
+    <p id="delName"></p>
+    <div class="actions">
+      <button class="btn ghost" onclick="closeDel()">Batal</button>
+      <button class="btn danger" id="delConfirm">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>';
+const TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+const PENCIL = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+const UP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+const DOWN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+let db = null;
+let admin = false;
+const $ = id => document.getElementById(id);
+const todayKey = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const rupiah = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+const monthLabel = m => BULAN[+m.slice(5,7)-1] + ' ' + m.slice(0,4);
+
+// dual-mode: di dalam GAS pakai google.script.run, di PWA (GitHub Pages) pakai fetch ke API
+const API = 'https://script.google.com/macros/s/AKfycbwmLEvLcsCVBglutd35hHaJJHt7inTcPfbs82InaRpBYoT68BhgoJx46QsuxBb79HGM/exec';
+async function call(fn, ...args) {
+  if (typeof google !== 'undefined' && google.script) {
+    return new Promise((ok, err) => google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](...args));
+  }
+  const r = await fetch(API, { method: 'POST', body: JSON.stringify({ fn, args }) });
+  const out = await r.json();
+  if (out && out.error) throw new Error(out.error);
+  return out;
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+function freqLabel(t) {
+  if (t.freq === 'harian') return 'Harian';
+  if (t.freq === '2harian') return 'Per 2 hari';
+  if (t.freq === '3harian') return 'Per 3 hari';
+  if (t.freq === 'mingguan') return 'Tiap ' + HARI[t.day];
+  return 'Tiap tgl ' + t.day;
+}
+function dueOn(t, dateStr) {
+  if (t.start && t.start > dateStr) return false;
+  const d = new Date(dateStr + 'T00:00:00');
+  const gap = t.start ? Math.round((d - new Date(t.start + 'T00:00:00')) / 86400000) : 0;
+  if (t.freq === 'harian') return true;
+  if (t.freq === '2harian') return gap % 2 === 0;
+  if (t.freq === '3harian') return gap % 3 === 0;
+  if (t.freq === 'mingguan') return d.getDay() === t.day;
+  return d.getDate() === t.day;
+}
+function dueToday(t) { return dueOn(t, todayKey()); }
+// client-side report: instant update, no server round-trip.
+// with startDate: workdays = calendar days since mulai kerja; without: days with >=1 check
+function calcReport() {
+  const byMonth = {};
+  db.done.forEach(d => {
+    const m = d.date.slice(0, 7);
+    byMonth[m] = byMonth[m] || { days: {}, checks: 0 };
+    byMonth[m].days[d.date] = true;
+    byMonth[m].checks++;
+  });
+  if (!db.startDate) {
+    return Object.keys(byMonth).sort().reverse().slice(0, 6).map(m => {
+      const workDays = Object.keys(byMonth[m].days).length;
+      return { month: m, workDays, checks: byMonth[m].checks, salary: workDays * db.wage };
+    });
+  }
+  const today = todayKey();
+  const out = [];
+  const cur = new Date(db.startDate.slice(0, 7) + '-01T00:00:00');
+  while (out.length < 12) {
+    const m = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
+    if (m > today.slice(0, 7)) break;
+    const monthEnd = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate();
+    const from = m === db.startDate.slice(0, 7) ? +db.startDate.slice(8) : 1;
+    const to = m === today.slice(0, 7) ? +today.slice(8) : monthEnd;
+    const workDays = countWorkDays(cur.getFullYear(), cur.getMonth(), from, to);
+    out.push({ month: m, workDays, checks: byMonth[m] ? byMonth[m].checks : 0, salary: workDays * db.wage });
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return out.reverse().slice(0, 6);
+}
+
+// hari kerja = tanggal from..to di bulan itu, MINUS hari Minggu
+function countWorkDays(year, month, from, to) {
+  let n = 0;
+  for (let d = from; d <= to; d++) {
+    if (new Date(year, month, d).getDay() !== 0) n++;
+  }
+  return n;
+}
+function doneToday() {
+  const key = todayKey();
+  return db.done.filter(d => d.date === key).map(d => d.taskId);
+}
+
+function chartWeek() {
+  const bars = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const due = db.tasks.filter(t => dueOn(t, key)).length;
+    const doneN = db.done.filter(x => x.date === key).length;
+    const pct = due ? Math.min(100, Math.round(doneN / due * 100)) : 0;
+    bars.push(`<div class="cbar ${i === 0 ? 'today' : ''}">
+      <div class="v">${due ? pct + '%' : '–'}</div>
+      <div class="fill" style="height:${Math.max(4, pct)}%"></div>
+      <div class="l">${HARI[d.getDay()].slice(0,3)}<br>${d.getDate()}</div></div>`);
+  }
+  return `<div class="card"><div class="label"><span>Tugas Selesai · 7 Hari</span></div><div class="chart">${bars.join('')}</div></div>`;
+}
+
+function chartMonth() {
+  if (!db.report.length) return '';
+  const max = Math.max(...db.report.map(r => r.salary), 1);
+  const rows = [...db.report].reverse().map(r => `<div class="hrow">
+    <div class="hl">${monthLabel(r.month)}</div>
+    <div class="htrack"><div class="hfill" style="width:${Math.round(r.salary / max * 100)}%"></div></div>
+    <div class="hv">${rupiah(r.salary)}</div></div>`).join('');
+  return `<div class="card"><div class="label"><span>Estimasi Gaji per Bulan</span></div>${rows}</div>`;
+}
+
+function dailyDetail() {
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const due = db.tasks.filter(t => dueOn(t, key));
+    if (!due.length && i > 0) continue;
+    const doneRows = db.done.filter(x => x.date === key);
+    const doneIds = doneRows.map(x => x.taskId);
+    const selesai = due.filter(t => doneIds.includes(t.id));
+    const belum = due.filter(t => !doneIds.includes(t.id));
+    const label = i === 0 ? 'Hari ini' : (i === 1 ? 'Kemarin' : HARI[d.getDay()]) ;
+    days.push(`<div class="dayrow">
+      <div class="dhead"><span>${label} · ${d.getDate()} ${BULAN[d.getMonth()]}</span><span class="pct">${selesai.length}/${due.length}</span></div>
+      ${selesai.length ? '<ul>' + selesai.map(t => { const w = doneRows.find(x => x.taskId === t.id); return `<li>${t.name}${w && w.who ? ` <span class="who">— ${w.who}</span>` : ''}</li>`; }).join('') + '</ul>' : ''}
+      ${belum.length ? '<ul>' + belum.map(t => `<li class="miss">${t.name} (belum)</li>`).join('') + '</ul>' : ''}
+      ${!due.length ? '<div class="none">Tidak ada tugas terjadwal.</div>' : ''}
+    </div>`);
+  }
+  return days.join('') || '<div class="empty">Belum ada data.</div>';
+}
+
+function reportTable() {
+  if (!db.report.length) return '<div class="empty">Belum ada riwayat.</div>';
+  return `<div class="card" style="padding:8px 16px"><table>
+    <tr><th>Bulan</th><th class="num">Hari Kerja</th><th class="num">Tugas ✓</th><th class="num">Estimasi Gaji</th></tr>
+    ${db.report.map(r => `<tr><td>${monthLabel(r.month)}</td><td class="num">${r.workDays}</td><td class="num">${r.checks}</td><td class="num">${rupiah(r.salary)}</td></tr>`).join('')}
+  </table></div>`;
+}
+
+let tab = 'home';
+function setTab(t) {
+  tab = t;
+  $('tabHome').classList.toggle('active', t === 'home');
+  $('tabReport').classList.toggle('active', t === 'report');
+  render();
+  window.scrollTo(0, 0);
+}
+
+function render() {
+  db.report = calcReport();
+  const now = new Date();
+  const who = localStorage.artName ? localStorage.artName + ' · ' : '';
+  $('subtitle').textContent = admin ? 'Mode Admin' : who + HARI[now.getDay()] + ', ' + now.getDate() + ' ' + BULAN[now.getMonth()];
+  if (tab === 'report') { renderReport(); return; }
+  admin ? renderAdmin() : renderART();
+}
+
+function renderReport() {
+  const thisMonth = db.report.find(r => r.month === todayKey().slice(0,7));
+  $('app').innerHTML = `
+    <div class="card salary">
+      <div class="slabel">Estimasi Gaji Bulan Ini</div>
+      <div class="amount">${rupiah(thisMonth ? thisMonth.salary : 0)}</div>
+      <div class="sgrid">
+        <div><b>${thisMonth ? thisMonth.workDays : 0}</b><span>Hari Kerja</span></div>
+        <div><b>${rupiah(db.wage)}</b><span>Per Hari</span></div>
+        ${db.startDate ? `<div><b>${+db.startDate.slice(8)} ${BULAN[+db.startDate.slice(5,7)-1]}</b><span>Mulai Kerja</span></div>` : ''}
+      </div>
+    </div>
+    ${chartWeek()}
+    ${chartMonth()}
+    <h2>Detail 7 Hari Terakhir</h2>${dailyDetail()}
+    <h2>Laporan Bulanan</h2>${reportTable()}`;
+}
+
+function saveName() {
+  const v = $('nameInput').value.trim();
+  if (!v) { $('nameInput').classList.add('shake'); return; }
+  localStorage.artName = v;
+  $('nameModal').classList.remove('show');
+  render();
+}
+
+// Android Chrome: tombol Pasang asli via beforeinstallprompt; iOS: panduan Add to Home Screen
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (db && !admin) render(); });
+
+function installBanner() {
+  if (localStorage.installDismissed || matchMedia('(display-mode: standalone)').matches || navigator.standalone) return '';
+  const inGas = typeof google !== 'undefined' && google.script;
+  return `<div class="install">
+    <div class="it"><b>Pasang Aplikasi</b>Biar muncul di layar utama HP.</div>
+    <button class="go" onclick="doInstall()">${installEvt ? 'Pasang' : 'Cara Pasang'}</button>
+    <button class="x" aria-label="Tutup" onclick="localStorage.installDismissed=1;render()">✕</button>
+  </div>`;
+}
+
+async function doInstall() {
+  if (installEvt) {
+    installEvt.prompt();
+    const res = await installEvt.userChoice;
+    if (res.outcome === 'accepted') { localStorage.installDismissed = 1; render(); }
+    installEvt = null;
+    return;
+  }
+  const ios = /iPhone|iPad/.test(navigator.userAgent);
+  $('installSub').textContent = ios ? 'Di iPhone (Safari atau Chrome):' : 'Di Android (Chrome):';
+  $('installSteps').innerHTML = ios
+    ? '<li>Tap tombol <b>Bagikan</b> (kotak dengan panah ke atas)</li><li>Pilih <b>Tambah ke Layar Utama</b></li><li>Tap <b>Tambah</b></li>'
+    : '<li>Tap menu <b>⋮</b> di kanan atas Chrome</li><li>Pilih <b>Tambahkan ke layar utama</b></li><li>Tap <b>Tambahkan</b></li>';
+  $('installModal').classList.add('show');
+}
+
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !location.host.includes('googleusercontent')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+function taskRow(t, done) {
+  return `<div class="task ${done ? 'done' : ''}" role="checkbox" aria-checked="${done}" tabindex="0" onclick="toggle(this,'${t.id}')" onkeydown="if(event.key==' '||event.key==='Enter'){event.preventDefault();toggle(this,'${t.id}')}">
+    <div class="check">${CHECK}</div>
+    <div class="name">${t.name}${t.desc ? `<div class="desc">${t.desc}</div>` : ''}</div>
+    <div class="freq">${freqLabel(t)}</div></div>`;
+}
+
+function renderART() {
+  const due = db.tasks.filter(dueToday);
+  const doneIds = doneToday();
+  const todo = due.filter(t => !doneIds.includes(t.id));
+  const sudah = due.filter(t => doneIds.includes(t.id));
+  const thisMonth = db.report.find(r => r.month === todayKey().slice(0,7));
+  const est = thisMonth ? thisMonth.salary : 0;
+  let html = installBanner() + `<div class="card salary">
+    <div class="slabel">Estimasi Gaji Bulan Ini</div>
+    <div class="amount">${rupiah(est)}</div>
+    <div class="sgrid">
+      <div><b>${thisMonth ? thisMonth.workDays : 0}</b><span>Hari Kerja</span></div>
+      <div><b>${rupiah(db.wage)}</b><span>Per Hari</span></div>
+      ${db.startDate ? `<div><b>${+db.startDate.slice(8)} ${BULAN[+db.startDate.slice(5,7)-1]}</b><span>Mulai Kerja</span></div>` : ''}
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n">${todo.length}</div><div class="t">Belum</div></div>
+    <div class="stat ok"><div class="n">${sudah.length}</div><div class="t">Selesai</div></div>
+  </div>`;
+  if (!due.length) {
+    html += '<div class="empty">Tidak ada tugas hari ini</div>';
+  } else {
+    html += `<div class="card sticky"><div class="label"><span>Progres hari ini</span><span>${sudah.length}/${due.length}</span></div><div class="bar"><div style="width:${sudah.length/due.length*100}%"></div></div></div>`;
+    if (todo.length) html += `<h2>Belum Dikerjakan (${todo.length})</h2>` + todo.map(t => taskRow(t, false)).join('');
+    if (sudah.length) html += `<h2>Sudah Selesai (${sudah.length})</h2>` + sudah.map(t => taskRow(t, true)).join('');
+  }
+  $('app').innerHTML = html;
+}
+
+let toggleSeq = 0;
+async function toggle(el, id) {
+  // optimistic: flip instantly, sync to sheet in background
+  const key = todayKey();
+  const i = db.done.findIndex(d => d.date === key && d.taskId === id);
+  i >= 0 ? db.done.splice(i, 1) : db.done.push({ date: key, taskId: id, who: localStorage.artName || '' });
+  render();
+  const seq = ++toggleSeq;
+  try {
+    const fresh = await call('toggleDone', id, localStorage.artName || '');
+    if (seq === toggleSeq) { db = fresh; render(); }
+  } catch (e) {
+    if (seq === toggleSeq) {
+      const j = db.done.findIndex(d => d.date === key && d.taskId === id);
+      j >= 0 ? db.done.splice(j, 1) : db.done.push({ date: key, taskId: id, who: localStorage.artName || '' });
+      render(); toast('Gagal menyimpan, coba lagi');
+    }
+  }
+}
+
+let editId = null;
+
+function renderAdmin() {
+  const editing = db.tasks.find(t => t.id === editId);
+  $('app').innerHTML = `
+    <form onsubmit="saveWage(event)">
+      <div class="row2">
+        <label>Gaji harian (Rp)
+          <input id="fWage" type="number" min="0" step="1000" value="${db.wage}" required oninput="payPreview()"></label>
+        <label>Tgl mulai kerja
+          <input id="fStart" type="date" value="${db.startDate || ''}" max="${todayKey()}" oninput="payPreview()"></label>
+      </div>
+      <div class="note" id="payPreview" style="font-size:13.5px;font-weight:500;opacity:.75"></div>
+      <button class="btn" type="submit">Simpan Gaji</button>
+    </form>
+    <form onsubmit="saveTask(event)">
+      <label>${editing ? 'Ubah tugas' : 'Nama tugas'} <input id="fName" required maxlength="60" placeholder="cth: Pel lantai bawah" value="${editing ? editing.name.replace(/"/g,'&quot;') : ''}"></label>
+      <label>Deskripsi (opsional) <input id="fDesc" maxlength="200" placeholder="cth: Pakai karbol, jangan lupa kolong sofa" value="${editing && editing.desc ? editing.desc.replace(/"/g,'&quot;') : ''}"></label>
+      <div class="row2">
+        <label>Periode
+          <select id="fFreq" onchange="syncDay()">
+            <option value="harian">Harian</option>
+            <option value="2harian">Per 2 hari</option>
+            <option value="3harian">Per 3 hari</option>
+            <option value="mingguan">Mingguan</option>
+            <option value="bulanan">Bulanan</option>
+          </select></label>
+        <label id="dayWrap" style="visibility:hidden">Hari/Tanggal <select id="fDay"></select></label>
+      </div>
+      <div class="row2">
+        ${editing ? '<button class="btn ghost" type="button" onclick="editId=null;render()">Batal</button>' : ''}
+        <button class="btn" type="submit">${editing ? 'Simpan Perubahan' : 'Tambah Tugas'}</button>
+      </div>
+    </form>
+    <h2>Daftar Tugas (${db.tasks.length})</h2>
+    ${db.tasks.map((t, i) => `<div class="arow ${t.id === editId ? 'editing' : ''}">
+      <div class="name">${t.name}<div class="meta">${freqLabel(t)}</div></div>
+      <button aria-label="Naikkan urutan" ${i === 0 ? 'disabled' : ''} onclick="move('${t.id}',-1)">${UP}</button>
+      <button aria-label="Turunkan urutan" ${i === db.tasks.length - 1 ? 'disabled' : ''} onclick="move('${t.id}',1)">${DOWN}</button>
+      <button class="edit" aria-label="Ubah ${t.name}" onclick="startEdit('${t.id}')">${PENCIL}</button>
+      <button class="del" aria-label="Hapus ${t.name}" onclick="delTask(this,'${t.id}')">${TRASH}</button></div>`).join('') || '<div class="empty">Belum ada tugas.</div>'}
+    <button class="btn ghost" style="width:100%;margin-top:16px" onclick="editId=null;admin=false;render()">Kembali ke Mode ART</button>`;
+  if (editing) {
+    $('fFreq').value = editing.freq;
+    syncDay();
+    if (['mingguan','bulanan'].includes(editing.freq)) $('fDay').value = editing.day;
+  }
+  payPreview();
+}
+
+function startEdit(id) {
+  editId = id;
+  render();
+  $('fName').focus();
+  $('fName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+let moveSeq = 0;
+async function move(id, dir) {
+  const i = db.tasks.findIndex(t => t.id === id);
+  // optimistic: row moves instantly, server sync happens behind the scenes
+  db.tasks.splice(i + dir, 0, db.tasks.splice(i, 1)[0]);
+  render();
+  const seq = ++moveSeq;
+  try {
+    const fresh = await call('reorderTasks', db.tasks.map(t => t.id));
+    if (seq === moveSeq) { db = fresh; render(); }
+  }
+  catch (e) { toast('Gagal menyimpan urutan'); }
+}
+
+function syncDay() {
+  const freq = $('fFreq').value, wrap = $('dayWrap'), sel = $('fDay');
+  const needsDay = ['mingguan','bulanan'].includes(freq);
+  wrap.style.visibility = needsDay ? 'visible' : 'hidden';
+  sel.innerHTML = freq === 'mingguan'
+    ? HARI.map((h, i) => `<option value="${i}">${h}</option>`).join('')
+    : Array.from({length:28}, (_, i) => `<option value="${i+1}">Tgl ${i+1}</option>`).join('');
+}
+
+async function saveTask(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]'); btn.classList.add('loading');
+  const args = [$('fName').value.trim(), $('fFreq').value, +$('fDay').value || 0, $('fDesc').value.trim()];
+  try {
+    db = editId ? await call('updateTask', editId, ...args) : await call('addTask', ...args);
+    toast(editId ? 'Perubahan disimpan' : 'Tugas ditambahkan');
+    editId = null; render();
+  }
+  catch (err) { btn.classList.remove('loading'); toast('Gagal, coba lagi'); }
+}
+
+function delTask(el, id) {
+  const t = db.tasks.find(t => t.id === id);
+  $('delName').textContent = '"' + (t ? t.name : '') + '" akan dihapus dari daftar.';
+  $('delModal').classList.add('show');
+  $('delConfirm').onclick = async () => {
+    closeDel();
+    el.disabled = true;
+    try { db = await call('delTask', id); render(); toast('Tugas dihapus'); }
+    catch (e) { el.disabled = false; toast('Gagal, coba lagi'); }
+  };
+}
+function closeDel() { $('delModal').classList.remove('show'); }
+
+function closePin() { $('pinModal').classList.remove('show'); }
+function submitPin() {
+  const inp = $('pinInput');
+  if (inp.value === db.pin) { closePin(); admin = true; render(); }
+  else { inp.value = ''; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); toast('PIN salah'); }
+}
+
+function payPreview() {
+  const wage = +$('fWage').value || 0, start = $('fStart').value;
+  if (!start) { $('payPreview').textContent = 'Tanpa tgl mulai: gaji dihitung dari hari yang tercentang saja.'; return; }
+  const today = todayKey();
+  const from = start.slice(0, 7) === today.slice(0, 7) ? +start.slice(8) : 1;
+  const days = countWorkDays(+today.slice(0, 4), +today.slice(5, 7) - 1, from, +today.slice(8));
+  $('payPreview').textContent = `Estimasi bulan ini: ${days} hari kerja (Minggu libur) × ${rupiah(wage)} = ${rupiah(days * wage)}`;
+}
+
+async function saveWage(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('.btn'); btn.classList.add('loading');
+  try { db = await call('setPay', +$('fWage').value, $('fStart').value); render(); toast('Gaji disimpan'); }
+  catch (err) { btn.classList.remove('loading'); toast('Gagal, coba lagi'); }
+}
+
+$('modeBtn').onclick = () => {
+  if (admin) { admin = false; render(); return; }
+  $('pinInput').value = '';
+  $('pinModal').classList.add('show');
+  setTimeout(() => $('pinInput').focus(), 100);
+};
+$('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); });
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); }));
+
+call('getState').then(d => {
+  db = d; render();
+  if (!localStorage.artName) { $('nameModal').classList.add('show'); setTimeout(() => $('nameInput').focus(), 100); }
+})
+  .catch(() => { $('app').innerHTML = '<div class="empty">Gagal memuat data. Muat ulang halaman.</div>'; });
+
+// keep ART view in sync with admin changes from another phone
+setInterval(async () => {
+  if (admin || document.hidden || document.querySelector('.overlay.show')) return;
+  try { db = await call('getState'); render(); } catch (e) {}
+}, 60000);
+</script>
+</body>
+</html>

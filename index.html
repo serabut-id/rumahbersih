@@ -23,9 +23,10 @@ header h1 { font-size:20px; font-weight:700; }
 header .sub { font-size:13px; opacity:.85; font-weight:500; }
 main { padding:16px 16px calc(110px + env(safe-area-inset-bottom)); max-width:560px; margin:0 auto; }
 /* nav floating ala Threads/Instagram: pill melayang, mengecil saat scroll ke bawah */
-nav { position:fixed; bottom:calc(14px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:rgba(255,255,255,.92); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid var(--border); border-radius:99px; display:flex; gap:4px; z-index:20; padding:6px; box-shadow:0 10px 30px rgba(30,42,68,.16); transition:transform .25s ease, opacity .25s ease; }
-nav.mini { transform:translateX(-50%) scale(.78); opacity:.75; }
-nav button { border:none; background:none; font:inherit; font-size:11.5px; font-weight:700; color:var(--fg); opacity:.5; padding:9px 22px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:99px; transition:opacity .15s ease, background .2s ease; }
+nav { position:fixed; bottom:calc(12px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:rgba(255,255,255,.92); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid var(--border); border-radius:99px; display:flex; gap:2px; z-index:20; padding:4px; box-shadow:0 8px 24px rgba(30,42,68,.14); transition:transform .25s ease, opacity .25s ease; }
+nav.mini { transform:translateX(-50%) scale(.7); opacity:.65; }
+nav button { border:none; background:none; font:inherit; font-size:10.5px; font-weight:700; color:var(--fg); opacity:.5; padding:6px 16px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; border-radius:99px; transition:opacity .15s ease, background .2s ease; }
+nav button svg { width:18px; height:18px; }
 nav button.active { opacity:1; color:var(--primary); background:var(--muted); }
 nav button:active { transform:scale(.95); }
 @keyframes pagein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
@@ -130,6 +131,14 @@ input:focus, select:focus { outline:2px solid var(--primary); outline-offset:1px
 .login p { opacity:.65; font-weight:500; margin-bottom:32px; }
 .login .btn { width:100%; margin-bottom:12px; font-size:17px; padding:16px; }
 .linkbtn { border:none; background:none; font:inherit; font-size:14.5px; font-weight:600; color:var(--primary); cursor:pointer; padding:10px; }
+.menuitem { width:100%; text-align:left; border:1px solid var(--border); background:#fff; border-radius:16px; padding:16px; margin-bottom:12px; display:flex; align-items:center; gap:14px; cursor:pointer; font:inherit; color:var(--fg); transition:transform .1s ease; }
+.menuitem:active { transform:scale(.98); }
+.menuitem .micon { width:46px; height:46px; border-radius:14px; background:var(--muted); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.menuitem .mtext { flex:1; min-width:0; }
+.menuitem .mtext b { font-size:15.5px; display:block; }
+.menuitem .mtext span { font-size:13px; opacity:.6; font-weight:500; }
+.menuitem .chev { opacity:.35; flex-shrink:0; }
+.backbtn { border:none; background:none; font:inherit; font-size:14.5px; font-weight:700; color:var(--primary); cursor:pointer; display:flex; align-items:center; gap:4px; padding:0 0 14px; }
 .steps { margin:0; padding-left:20px; font-size:14.5px; }
 .steps li { margin:8px 0; }
 .skel { background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:10px; position:relative; overflow:hidden; }
@@ -559,6 +568,7 @@ function renderART() {
     if (todo.length) html += `<h2>Belum Dikerjakan (${todo.length})</h2>` + todo.map(t => taskRow(t, false)).join('');
     if (sudah.length) html += `<h2>Sudah Selesai (${sudah.length})</h2>` + sudah.map(t => taskRow(t, true)).join('');
   }
+  if (localStorage.role === 'admin') html += `<button class="btn ghost" style="width:100%;margin-top:16px" onclick="admin=true;setTab('home')">Kembali ke Mode Admin</button>`;
   $('app').innerHTML = html;
 }
 
@@ -583,10 +593,43 @@ async function toggle(el, id) {
 }
 
 let editId = null;
+let adminSection = null;
+
+function setSection(s) {
+  adminSection = s; editId = null; editUserId = null;
+  render();
+  window.scrollTo(0, 0);
+  const m = document.querySelector('main');
+  m.classList.remove('pagein'); void m.offsetWidth; m.classList.add('pagein');
+}
+
+const CHEV = '<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+const BACK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
 
 function renderAdmin() {
-  const editing = db.tasks.find(t => t.id === editId);
+  if (adminSection === 'gaji') return renderGaji();
+  if (adminSection === 'tugas') return renderTugas();
+  if (adminSection === 'user') return renderUsers();
+  const thisMonth = db.report.find(r => r.month === todayKey().slice(0,7));
   $('app').innerHTML = `
+    <button class="menuitem" onclick="setSection('gaji')">
+      <div class="micon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+      <div class="mtext"><b>Atur Gaji</b><span>${rupiah(db.wage)}/hari · estimasi ${rupiah(thisMonth ? thisMonth.salary : 0)}</span></div>${CHEV}
+    </button>
+    <button class="menuitem" onclick="setSection('tugas')">
+      <div class="micon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 3.01 6"/><polyline points="3 12 3.01 12"/><polyline points="3 18 3.01 18"/></svg></div>
+      <div class="mtext"><b>Atur Tugas</b><span>${db.tasks.length} tugas terdaftar</span></div>${CHEV}
+    </button>
+    <button class="menuitem" onclick="setSection('user')">
+      <div class="micon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="mtext"><b>Pengguna</b><span>${db.users.length} akun (admin & ART)</span></div>${CHEV}
+    </button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="admin=false;setTab('home')">Lihat Tampilan ART</button>`;
+}
+
+function renderGaji() {
+  $('app').innerHTML = `
+    <button class="backbtn" onclick="setSection(null)">${BACK} Kembali</button>
     <form onsubmit="saveWage(event)">
       <div class="row2">
         <label>Gaji harian (Rp)
@@ -598,7 +641,14 @@ function renderAdmin() {
         <input id="fHouse" maxlength="20" placeholder="cth: B-12" value="${(db.houseNo || '').replace(/"/g,'&quot;')}"></label>
       <div class="note" id="payPreview" style="font-size:13.5px;font-weight:500;opacity:.75"></div>
       <button class="btn" type="submit">Simpan Gaji</button>
-    </form>
+    </form>`;
+  payPreview();
+}
+
+function renderTugas() {
+  const editing = db.tasks.find(t => t.id === editId);
+  $('app').innerHTML = `
+    <button class="backbtn" onclick="setSection(null)">${BACK} Kembali</button>
     <form onsubmit="saveTask(event)">
       <label>${editing ? 'Ubah tugas' : 'Nama tugas'} <input id="fName" required maxlength="60" placeholder="cth: Pel lantai bawah" value="${editing ? editing.name.replace(/"/g,'&quot;') : ''}"></label>
       <label>Deskripsi (opsional) <input id="fDesc" maxlength="200" placeholder="cth: Pakai karbol, jangan lupa kolong sofa" value="${editing && editing.desc ? editing.desc.replace(/"/g,'&quot;') : ''}"></label>
@@ -624,8 +674,18 @@ function renderAdmin() {
       <button aria-label="Naikkan urutan" ${i === 0 ? 'disabled' : ''} onclick="move('${t.id}',-1)">${UP}</button>
       <button aria-label="Turunkan urutan" ${i === db.tasks.length - 1 ? 'disabled' : ''} onclick="move('${t.id}',1)">${DOWN}</button>
       <button class="edit" aria-label="Ubah ${t.name}" onclick="startEdit('${t.id}')">${PENCIL}</button>
-      <button class="del" aria-label="Hapus ${t.name}" onclick="delTask(this,'${t.id}')">${TRASH}</button></div>`).join('') || '<div class="empty">Belum ada tugas.</div>'}
-    <h2>Pengguna (${db.users.length})</h2>
+      <button class="del" aria-label="Hapus ${t.name}" onclick="delTask(this,'${t.id}')">${TRASH}</button></div>`).join('') || '<div class="empty">Belum ada tugas.</div>'}`;
+  if (editing) {
+    $('fFreq').value = editing.freq;
+    syncDay();
+    if (['mingguan','bulanan'].includes(editing.freq)) $('fDay').value = editing.day;
+  }
+}
+
+function renderUsers() {
+  $('app').innerHTML = `
+    <button class="backbtn" onclick="setSection(null)">${BACK} Kembali</button>
+    <h2 style="margin-top:0">Pengguna (${db.users.length})</h2>
     <form onsubmit="saveUser(event)">
       <div class="row2">
         <label>Nama <input id="uName" required maxlength="30" placeholder="cth: Hayati"></label>
@@ -644,16 +704,9 @@ function renderAdmin() {
       <div class="name">${u.name}<div class="meta">${u.role === 'admin' ? 'Admin' : 'ART'} · PIN ${u.pin}</div></div>
       <button class="edit" aria-label="Ubah ${u.name}" onclick="startEditUser('${u.id}')">${PENCIL}</button>
       <button class="del" aria-label="Hapus ${u.name}" ${lastAdmin ? 'disabled' : ''} onclick="delUser(this,'${u.id}')">${TRASH}</button></div>`;
-    }).join('')}
-    <button class="btn ghost" style="width:100%;margin-top:16px" onclick="editId=null;admin=false;setTab('home')">Kembali ke Mode ART</button>`;
-  if (editing) {
-    $('fFreq').value = editing.freq;
-    syncDay();
-    if (['mingguan','bulanan'].includes(editing.freq)) $('fDay').value = editing.day;
-  }
+    }).join('')}`;
   const eu = db.users.find(u => u.id === editUserId);
   if (eu) { $('uName').value = eu.name; $('uPin').value = eu.pin; $('uRole').value = eu.role; }
-  payPreview();
 }
 
 let editUserId = null;
